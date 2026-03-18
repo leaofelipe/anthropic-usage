@@ -190,6 +190,13 @@ fetch_usage() {
     body=$(_curl_usage "${API_BASE}?${query}")
     page_num=$(( page_num + 1 ))
 
+    # Validate that the response contains a "data" array before merging.
+    # jq exits non-zero and prints to stderr if the field is missing or not an array,
+    # which causes the || die branch to fire with a clear message.
+    if ! echo "$body" | jq -e '.data | arrays' > /dev/null 2>&1; then
+      die "Malformed API response on page ${page_num}: missing or invalid 'data' field. Response: ${body}"
+    fi
+
     # Merge this page's buckets into the accumulated array.
     all_data=$(printf '%s\n%s' "$all_data" "$body" \
       | jq -s '.[0] + .[1].data')
