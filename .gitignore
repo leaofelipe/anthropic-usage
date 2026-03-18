@@ -1,0 +1,80 @@
+# =============================================================================
+# anthropic-usage — .gitignore
+# =============================================================================
+# This file prevents secrets and local artifacts from being committed to git.
+
+# -----------------------------------------------------------------------------
+# API KEYS AND SECRETS — never commit these
+# -----------------------------------------------------------------------------
+
+# Generic secret/key file patterns
+*.key
+*.pem
+*.p12
+*.pfx
+api_key
+api_key.txt
+secret
+secret.txt
+
+# Environment variable files
+.env
+.env.*
+.env.local
+.env.*.local
+
+# AWS credentials (in case this repo is used alongside AWS tooling)
+.aws/credentials
+
+# Any file named "credentials"
+credentials
+credentials.json
+credentials.yaml
+credentials.yml
+
+# Config directory contents if someone copies them here by mistake
+config/api_key
+config/*.key
+
+# -----------------------------------------------------------------------------
+# OS / EDITOR ARTIFACTS
+# -----------------------------------------------------------------------------
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.nfs*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# JetBrains IDEs
+.idea/
+
+# VS Code (keep .vscode/settings.json if useful, but not extensions or env)
+.vscode/extensions.json
+.vscode/*.env
+
+# Vim swap files
+*.swp
+*.swo
+
+# -----------------------------------------------------------------------------
+# RUNTIME / BUILD ARTIFACTS
+# -----------------------------------------------------------------------------
+
+# Shell script output captured to files
+*.log
+*.out
+
+# Any temp files created during testing
+tmp/
+temp/
+.tmp/
