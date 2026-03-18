@@ -60,52 +60,31 @@ chmod +x scripts/usage.sh
 
 ## Configuration
 
-### Secure API key setup
+### API key setup
 
-This skill reads your API key from a file: `~/.config/anthropic-usage/api_key`.
+This skill requires an `ANTHROPIC_ADMIN_API_KEY` environment variable containing an Admin API key.
 
-Run these commands to set it up:
+You can generate one in the Anthropic Console under **Settings → API Keys → Admin keys**. Your account must be on an **Organization plan** — personal accounts get a `403 Forbidden`.
 
-```bash
-# 1. Create the config directory (only accessible by you)
-mkdir -p ~/.config/anthropic-usage
-chmod 700 ~/.config/anthropic-usage
+**Via OpenClaw (recommended):**
 
-# 2. Write your key into the file (replace sk-ant-admin-... with your real key)
-printf '%s' 'sk-ant-admin-YOUR_KEY_HERE' > ~/.config/anthropic-usage/api_key
-
-# 3. Restrict file permissions so only you can read it
-chmod 600 ~/.config/anthropic-usage/api_key
-
-# 4. Verify the key works
-bash scripts/usage.sh --check
+```
+/secrets set ANTHROPIC_ADMIN_API_KEY sk-ant-admin-YOUR_KEY_HERE
 ```
 
-### Why this is safer than environment variables or shell profiles
+OpenClaw's secrets manager stores the key securely and injects it as an environment variable when the skill runs. You only need to do this once.
 
-Many guides tell you to add `export ANTHROPIC_API_KEY=sk-...` to your `~/.bashrc` or
-`~/.zshrc`. **Do not do this.** Here is why:
+**For terminal use:**
 
-| Risk | Shell profile (`~/.bashrc`) | Config file (`chmod 600`) |
-|------|-----------------------------|---------------------------|
-| Visible in `env` / `printenv` output | Yes — any process you run can read your env | No — never in the environment |
-| Visible in `/proc/<pid>/environ` | Yes — on Linux, child processes can see it | No |
-| Accidentally committed to git | Easy — if you track dotfiles | Harder — gitignore + separate directory |
-| Leaked via `set -x` debug output | Yes — shell debug mode prints all vars | No |
-| Leaked to sub-processes / CI logs | Yes | No |
-| File permissions enforced by OS | No | Yes — `chmod 600` means only your user can read it |
+```bash
+export ANTHROPIC_ADMIN_API_KEY=sk-ant-admin-YOUR_KEY_HERE
+```
 
-The `~/.config/` directory is a standard location for user-specific configuration
-(per the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)).
-Storing credentials there with `chmod 600` means:
+Then verify the key works:
 
-- The OS refuses reads from other users or processes running as other users
-- The key never appears in your shell history (you are not typing it)
-- The key never contaminates the environment of every program you run
-
-> **Warning**: Never add your API key to `.bashrc`, `.zshrc`, `.profile`, or any shell
-> startup file. Never `export` it at the command line. This skill is designed specifically
-> to avoid those patterns.
+```bash
+bash scripts/usage.sh --check
+```
 
 ---
 
@@ -214,7 +193,7 @@ What each outcome means:
 | Output | Meaning | Action |
 |--------|---------|--------|
 | `OK — key is valid...` | Key is accepted by the API | You are good to go |
-| `401 Unauthorized` | Key is invalid, expired, or has a typo | Re-generate the key in the Anthropic Console and re-write the file |
+| `401 Unauthorized` | Key is invalid, expired, or has a typo | Re-generate the key in the Anthropic Console and run `/secrets set` again |
 | `403 Forbidden` | Key lacks required permissions, or account is not on Organization plan | Ensure you are using an **Admin key** and that your account is on the Organization plan |
 | `Network error` | `curl` could not reach `api.anthropic.com` | Check your internet connection |
 
@@ -242,12 +221,11 @@ severely malformed API response.
 
 ## Troubleshooting
 
-**"API key file not found"**
-Run the setup commands in the [Configuration](#configuration) section.
+**"ANTHROPIC_ADMIN_API_KEY is not set"**
+The environment variable is missing. In OpenClaw run `/secrets set ANTHROPIC_ADMIN_API_KEY sk-ant-admin-YOUR_KEY_HERE`. For terminal use, `export ANTHROPIC_ADMIN_API_KEY=sk-ant-admin-YOUR_KEY_HERE`.
 
 **"401 Unauthorized"**
-Your key is invalid. Open `~/.config/anthropic-usage/api_key`, confirm the key is correct
-(no extra spaces or newlines), or generate a new one from the Anthropic Console.
+Your key is invalid or expired. Generate a new one from the Anthropic Console and re-register it with `/secrets set`.
 
 **"403 Forbidden"**
 One of two things:

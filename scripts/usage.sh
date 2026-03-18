@@ -17,11 +17,6 @@ set -euo pipefail
 # CONFIGURATION
 # -----------------------------------------------------------------------------
 
-# Path to the file that holds your Anthropic Admin API key.
-# We read from a file instead of an environment variable so the key never
-# appears in your shell history, process list, or shell profile.
-KEY_FILE="${HOME}/.config/anthropic-usage/api_key"
-
 # Anthropic API endpoint for usage reports.
 API_BASE="https://api.anthropic.com/v1/organizations/usage_report/messages"
 
@@ -326,8 +321,8 @@ for arg in "$@"; do
   esac
 done
 
-# If none of daily/weekly/monthly was selected, default to weekly.
-if ! $OPT_DAILY && ! $OPT_WEEKLY && ! $OPT_MONTHLY; then
+# If none of daily/weekly/monthly was selected, default to weekly (skip for check).
+if ! $OPT_DAILY && ! $OPT_WEEKLY && ! $OPT_MONTHLY && ! $OPT_CHECK; then
   echo "No period flag specified — defaulting to --weekly. Use --help to see all options." >&2
   OPT_WEEKLY=true
 fi
@@ -339,29 +334,22 @@ fi
 require_cmd curl
 require_cmd jq
 
-# Ensure the key file exists.
-if [[ ! -f "$KEY_FILE" ]]; then
-  die "API key file not found: ${KEY_FILE}
+# Ensure the env var is set.
+if [[ -z "${ANTHROPIC_ADMIN_API_KEY:-}" ]]; then
+  die "ANTHROPIC_ADMIN_API_KEY is not set.
 
-  Please set up your API key first:
-    mkdir -p ~/.config/anthropic-usage
-    chmod 700 ~/.config/anthropic-usage
-    printf '%s' 'YOUR_API_KEY_HERE' > ~/.config/anthropic-usage/api_key
-    chmod 600 ~/.config/anthropic-usage/api_key
+  Set it via OpenClaw:
+    /secrets set ANTHROPIC_ADMIN_API_KEY sk-ant-admin-YOUR_KEY_HERE
 
-  See README.md for full setup instructions."
-fi
+  Or export it manually for terminal use:
+    export ANTHROPIC_ADMIN_API_KEY=sk-ant-admin-YOUR_KEY_HERE
 
-# Read the key from the file. tr -d removes any accidental trailing newline.
-ANTHROPIC_ADMIN_API_KEY=$(tr -d '[:space:]' < "$KEY_FILE")
-
-# Basic sanity check — Anthropic Admin keys start with "sk-ant-admin".
-if [[ -z "$ANTHROPIC_ADMIN_API_KEY" ]]; then
-  die "API key file is empty: ${KEY_FILE}"
+  You can generate an Admin key in the Anthropic Console under Settings → API Keys → Admin keys.
+  Your account must be on an Organization plan to access usage reports."
 fi
 
 if [[ "$ANTHROPIC_ADMIN_API_KEY" != sk-ant-admin* ]]; then
-  die "Invalid API key format. Anthropic Admin keys start with 'sk-ant-admin'. Check ${KEY_FILE}."
+  die "Invalid API key format. Anthropic Admin keys start with 'sk-ant-admin'. Check your ANTHROPIC_ADMIN_API_KEY."
 fi
 
 # If --check was requested, validate the key via GET /v1/models and exit.

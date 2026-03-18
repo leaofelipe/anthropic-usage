@@ -5,8 +5,8 @@ metadata:
   openclaw:
     emoji: 📊
     requires:
-      env: []
-    configFile: "~/.config/anthropic-usage/api_key"
+      env:
+        - ANTHROPIC_ADMIN_API_KEY
 ---
 
 # anthropic-usage
@@ -15,30 +15,26 @@ You are helping the user query their Anthropic token usage via the Admin API.
 
 ## Before running anything
 
-Check whether the API key file exists:
+Check whether the API key is available:
 
 ```bash
-test -f ~/.config/anthropic-usage/api_key && echo "KEY_EXISTS" || echo "KEY_MISSING"
+[[ -n "${ANTHROPIC_ADMIN_API_KEY:-}" ]] && echo "KEY_EXISTS" || echo "KEY_MISSING"
 ```
 
-- If the output is `KEY_MISSING`: stop and guide the user through setup. Tell them to read the **Configuration** section in `README.md` (or repeat the steps below). Do NOT proceed until the key file exists.
+- If the output is `KEY_MISSING`: stop and guide the user through setup. Do NOT proceed until the variable is set.
 - If the output is `KEY_EXISTS`: proceed.
 
 ### Setup guidance (show this when KEY_MISSING)
 
 Tell the user:
 
-> Your API key file is missing. Run these commands to set it up securely:
+> The `ANTHROPIC_ADMIN_API_KEY` environment variable is not set. Register it with OpenClaw:
 >
-> ```bash
-> mkdir -p ~/.config/anthropic-usage
-> chmod 700 ~/.config/anthropic-usage
-> # Paste your key into the file (replace YOUR_KEY_HERE):
-> printf '%s' 'YOUR_KEY_HERE' > ~/.config/anthropic-usage/api_key
-> chmod 600 ~/.config/anthropic-usage/api_key
+> ```
+> /secrets set ANTHROPIC_ADMIN_API_KEY sk-ant-admin-YOUR_KEY_HERE
 > ```
 >
-> You can get an Admin API key from the Anthropic Console under **Settings → API Keys**.
+> You can get an Admin API key from the Anthropic Console under **Settings → API Keys → Admin keys**.
 > Your account must be on an **Organization plan** to access usage reports.
 
 ## Running the usage script
