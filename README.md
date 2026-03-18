@@ -171,6 +171,7 @@ Querying Anthropic usage API...
 | Total input tokens      | 12,450,000                   |
 | Output tokens           |  1,830,000                   |
 | Total tokens            | 14,280,000                   |
+| Web search requests     |            42                |
 
 Done.
 ```
@@ -180,11 +181,11 @@ With `--breakdown`:
 ```
 ## Usage — past 7 days — by model
 
-| Model                                    | Input tokens  | Output tokens |
-|------------------------------------------|---------------|---------------|
-| claude-opus-4-6                          |     8,200,000 |     1,100,000 |
-| claude-sonnet-4-6                        |     3,900,000 |       680,000 |
-| claude-haiku-4-5-20251001                |       350,000 |        50,000 |
+| Model                                    | Input tokens  | Output tokens | Web searches |
+|------------------------------------------|---------------|---------------|--------------|
+| claude-opus-4-6                          |     8,200,000 |     1,100,000 |           30 |
+| claude-sonnet-4-6                        |     3,900,000 |       680,000 |           12 |
+| claude-haiku-4-5-20251001                |       350,000 |        50,000 |            0 |
 ```
 
 ---

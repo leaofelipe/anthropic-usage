@@ -219,15 +219,16 @@ fetch_usage() {
 # The API response structure (per bucket):
 #   .data[] = { starting_at, ending_at, results: [ { uncached_input_tokens,
 #               cache_read_input_tokens, cache_creation: { ephemeral_1h_input_tokens,
-#               ephemeral_5m_input_tokens }, output_tokens, ... } ] }
+#               ephemeral_5m_input_tokens }, output_tokens,
+#               server_tool_use: { web_search_requests }, ... } ] }
 #
-# "Input tokens" here follows Anthropic's billing definition:
+# "Input tokens" follows Anthropic's billing definition:
 #   uncached input + cache reads + cache creation (both TTLs)
 render_summary() {
   local label="$1"
   local json="$2"
 
-  local total_uncached total_cache_read total_cache_creation total_output
+  local total_uncached total_cache_read total_cache_creation total_output total_web_searches
   total_uncached=$(echo "$json" | jq '[.data[].results[].uncached_input_tokens // 0] | add // 0')
   total_cache_read=$(echo "$json" | jq '[.data[].results[].cache_read_input_tokens // 0] | add // 0')
   total_cache_creation=$(echo "$json" | jq '
@@ -236,6 +237,7 @@ render_summary() {
        (.cache_creation.ephemeral_5m_input_tokens // 0))
     ] | add // 0')
   total_output=$(echo "$json" | jq '[.data[].results[].output_tokens // 0] | add // 0')
+  total_web_searches=$(echo "$json" | jq '[.data[].results[].server_tool_use.web_search_requests // 0] | add // 0')
 
   local total_input=$(( total_uncached + total_cache_read + total_cache_creation ))
 
@@ -250,6 +252,7 @@ render_summary() {
   printf "| Total input tokens      | %-28s |\n" "$(format_number "$total_input")"
   printf "| Output tokens           | %-28s |\n" "$(format_number "$total_output")"
   printf "| Total tokens            | %-28s |\n" "$(format_number "$(( total_input + total_output ))")"
+  printf "| Web search requests     | %-28s |\n" "$(format_number "$total_web_searches")"
   echo ""
 }
 
@@ -261,8 +264,8 @@ render_breakdown() {
   echo ""
   echo "## ${label} — by model"
   echo ""
-  echo "| Model                                    | Input tokens  | Output tokens |"
-  echo "|------------------------------------------|---------------|---------------|"
+  echo "| Model                                    | Input tokens  | Output tokens | Web searches |"
+  echo "|------------------------------------------|---------------|---------------|--------------|"
 
   # Aggregate per model across all buckets and pages.
   # Input = uncached + cache_read + cache_creation (both TTLs).
@@ -274,18 +277,20 @@ render_breakdown() {
                           + ($r.cache_read_input_tokens // 0)
                           + ($r.cache_creation.ephemeral_1h_input_tokens // 0)
                           + ($r.cache_creation.ephemeral_5m_input_tokens // 0)) |
-      .[$model].output += ($r.output_tokens // 0)
+      .[$model].output += ($r.output_tokens // 0) |
+      .[$model].searches += ($r.server_tool_use.web_search_requests // 0)
     )
     | to_entries
     | sort_by(-.value.input)
     | .[]
-    | [.key, .value.input, .value.output]
+    | [.key, .value.input, .value.output, .value.searches]
     | @tsv
-  ' | while IFS=$'\t' read -r model input output; do
-      printf "| %-40s | %13s | %13s |\n" \
+  ' | while IFS=$'\t' read -r model input output searches; do
+      printf "| %-40s | %13s | %13s | %12s |\n" \
         "$model" \
         "$(format_number "$input")" \
-        "$(format_number "$output")"
+        "$(format_number "$output")" \
+        "$(format_number "$searches")"
     done
 
   echo ""
