@@ -102,7 +102,11 @@ tomorrow_utc() {
 # Add comma separators to a number (e.g. 1234567 → 1,234,567).
 # Uses awk for portability (no LC_ALL tricks needed).
 format_number() {
-  echo "$1" | awk '{ printf "%'"'"'d\n", $1 }'
+  echo "$1" | awk '{
+    n = int($1); s = ""
+    while (n >= 1000) { s = "," sprintf("%03d", n % 1000) s; n = int(n / 1000) }
+    print n s
+  }'
 }
 
 # -----------------------------------------------------------------------------
