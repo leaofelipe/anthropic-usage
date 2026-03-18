@@ -301,10 +301,6 @@ if [[ -z "$ANTHROPIC_ADMIN_API_KEY" ]]; then
   die "API key file is empty: ${KEY_FILE}"
 fi
 
-# Export so curl sub-shells can see it (not strictly needed since we inline it,
-# but useful if this script is sourced or extended).
-export ANTHROPIC_ADMIN_API_KEY
-
 # -----------------------------------------------------------------------------
 # GROUP_BY FLAG
 # -----------------------------------------------------------------------------
