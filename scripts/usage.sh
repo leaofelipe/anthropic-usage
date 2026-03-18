@@ -118,6 +118,10 @@ format_number() {
 #   $1 — starting_at (RFC3339)
 #   $2 — ending_at   (RFC3339)
 #   $3 — group_by    ("model" or "" for no grouping)
+#
+# NOTE: This function does not handle pagination. If the API returns paginated
+# results (has_more: true), only the first page is returned. For typical usage
+# windows (up to 30 days with 1-day buckets), a single page is sufficient.
 fetch_usage() {
   local starting_at="$1"
   local ending_at="$2"
@@ -149,7 +153,7 @@ fetch_usage() {
   # Split response body and HTTP status code.
   http_code=$(echo "$response" | tail -n1)
   local body
-  body=$(echo "$response" | head -n -1)
+  body=$(echo "$response" | sed '$d')
 
   # Handle HTTP errors with user-friendly messages.
   case "$http_code" in
@@ -252,11 +256,6 @@ OPT_WEEKLY=false
 OPT_MONTHLY=false
 OPT_BREAKDOWN=false
 
-# If no arguments are given, default to --weekly.
-if [[ $# -eq 0 ]]; then
-  OPT_WEEKLY=true
-fi
-
 for arg in "$@"; do
   case "$arg" in
     --daily)     OPT_DAILY=true ;;
@@ -299,6 +298,10 @@ ANTHROPIC_ADMIN_API_KEY=$(tr -d '[:space:]' < "$KEY_FILE")
 # Basic sanity check — Anthropic Admin keys start with "sk-ant-admin".
 if [[ -z "$ANTHROPIC_ADMIN_API_KEY" ]]; then
   die "API key file is empty: ${KEY_FILE}"
+fi
+
+if [[ "$ANTHROPIC_ADMIN_API_KEY" != sk-ant-admin* ]]; then
+  die "Invalid API key format. Anthropic Admin keys start with 'sk-ant-admin'. Check ${KEY_FILE}."
 fi
 
 # -----------------------------------------------------------------------------
