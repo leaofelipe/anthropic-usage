@@ -136,7 +136,7 @@ _curl_usage() {
 
   case "$http_code" in
     200) ;;
-    401) die "401 Unauthorized — your API key is invalid or has been revoked. Check ~/.config/anthropic-usage/api_key." ;;
+    401) die "401 Unauthorized — your API key is invalid or has been revoked. Re-generate it in the Anthropic Console and set ANTHROPIC_ADMIN_API_KEY." ;;
     403) die "403 Forbidden — your key lacks Admin permissions, or your account is not on an Anthropic Organization plan. Usage reports require an Organization account." ;;
     404) die "404 Not Found — the usage report endpoint was not found. The API URL may have changed; please check for an updated version of this script." ;;
     429) die "429 Too Many Requests — you are being rate-limited. Wait a moment and try again." ;;
@@ -236,15 +236,19 @@ render_summary() {
   local json="$2"
 
   local total_uncached total_cache_read total_cache_creation total_output total_web_searches
-  total_uncached=$(echo "$json" | jq '[.data[].results[].uncached_input_tokens // 0] | add // 0')
-  total_cache_read=$(echo "$json" | jq '[.data[].results[].cache_read_input_tokens // 0] | add // 0')
-  total_cache_creation=$(echo "$json" | jq '
-    [.data[].results[] |
-      ((.cache_creation.ephemeral_1h_input_tokens // 0) +
-       (.cache_creation.ephemeral_5m_input_tokens // 0))
-    ] | add // 0')
-  total_output=$(echo "$json" | jq '[.data[].results[].output_tokens // 0] | add // 0')
-  total_web_searches=$(echo "$json" | jq '[.data[].results[].server_tool_use.web_search_requests // 0] | add // 0')
+  read -r total_uncached total_cache_read total_cache_creation total_output total_web_searches \
+    < <(echo "$json" | jq -r '
+      [
+        ([.data[].results[].uncached_input_tokens // 0] | add // 0),
+        ([.data[].results[].cache_read_input_tokens // 0] | add // 0),
+        ([.data[].results[] |
+            ((.cache_creation.ephemeral_1h_input_tokens // 0) +
+             (.cache_creation.ephemeral_5m_input_tokens // 0))
+          ] | add // 0),
+        ([.data[].results[].output_tokens // 0] | add // 0),
+        ([.data[].results[].server_tool_use.web_search_requests // 0] | add // 0)
+      ] | @tsv
+    ')
 
   local total_input=$(( total_uncached + total_cache_read + total_cache_creation ))
 
