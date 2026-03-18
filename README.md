@@ -7,9 +7,10 @@ An [OpenClaw](https://openclaw.dev) AgentSkill that queries the **Anthropic Admi
 ## What it does
 
 - Fetches token consumption data from the Anthropic Admin API
-- Reports input tokens, output tokens, total tokens, and request counts
+- Reports uncached input tokens, cache read/creation tokens, output tokens, and totals
 - Supports daily, weekly, and monthly windows
 - Optionally groups results by model (e.g. Opus vs Sonnet vs Haiku)
+- Automatically follows API pagination — all pages are merged before rendering
 - Outputs clean, markdown-friendly tables you can read in the terminal or in chat
 
 ---
@@ -50,7 +51,7 @@ clawhub install anthropic-usage
 ### Manual
 
 ```bash
-git clone https://github.com/your-org/anthropic-usage.git
+git clone https://github.com/leaofelipe/anthropic-usage.git
 cd anthropic-usage
 chmod +x scripts/usage.sh
 ```
@@ -162,12 +163,14 @@ Querying Anthropic usage API...
 
 ## Usage — past 7 days
 
-| Metric          | Value                        |
-|-----------------|------------------------------|
-| Input tokens    | 12,450,000                   |
-| Output tokens   |  1,830,000                   |
-| Total tokens    | 14,280,000                   |
-| Requests        |      3,421                   |
+| Metric                  | Value                        |
+|-------------------------|------------------------------|
+| Uncached input tokens   | 10,200,000                   |
+| Cache read tokens       |  1,900,000                   |
+| Cache creation tokens   |    350,000                   |
+| Total input tokens      | 12,450,000                   |
+| Output tokens           |  1,830,000                   |
+| Total tokens            | 14,280,000                   |
 
 Done.
 ```
@@ -177,11 +180,11 @@ With `--breakdown`:
 ```
 ## Usage — past 7 days — by model
 
-| Model                                    | Input tokens | Output tokens | Requests |
-|------------------------------------------|-------------|---------------|----------|
-| claude-opus-4-6                          |   8,200,000 |   1,100,000   |    1,204 |
-| claude-sonnet-4-6                        |   3,900,000 |     680,000   |    1,890 |
-| claude-haiku-4-5-20251001                |     350,000 |      50,000   |      327 |
+| Model                                    | Input tokens  | Output tokens |
+|------------------------------------------|---------------|---------------|
+| claude-opus-4-6                          |     8,200,000 |     1,100,000 |
+| claude-sonnet-4-6                        |     3,900,000 |       680,000 |
+| claude-haiku-4-5-20251001                |       350,000 |        50,000 |
 ```
 
 ---
@@ -208,6 +211,26 @@ What the HTTP status code means:
 
 ---
 
+## Pagination
+
+The script automatically follows API pagination. If the API returns multiple pages of
+results, they are fetched sequentially and merged into a single dataset before rendering.
+
+The following safeguards prevent the script from hanging or looping indefinitely:
+
+| Scenario | Protection | Max wait |
+|---|---|---|
+| DNS does not resolve / API unreachable | `--connect-timeout 10` on every `curl` call | 10 s |
+| Connection open but API stops sending data | `--max-time 30` on every `curl` call | 30 s |
+| API returns `has_more: true` indefinitely | Hard limit of 100 pages per request | 100 × 30 s (theoretical) |
+| API returns `has_more: true` but empty `next_page` | Explicit `-z "$next_page"` check exits the loop immediately | Immediate |
+
+In practice, a 30-day window with `bucket_width=1d` fits in a single page (the API
+returns at most 31 buckets per page). Reaching the 100-page limit would require a
+severely malformed API response.
+
+---
+
 ## Troubleshooting
 
 **"API key file not found"**
@@ -225,6 +248,15 @@ One of two things:
 **"jq: command not found"**
 Install `jq` — see the [Prerequisites](#prerequisites) section.
 
+**"Network error: curl failed (timed out or connection refused)"**
+The API did not respond within 30 seconds. Check your internet connection and try again.
+If the problem persists, verify the Anthropic API status at [status.anthropic.com](https://status.anthropic.com).
+
+**"Pagination safety limit reached"**
+The script fetched 100 pages without reaching the end of the results. This should never
+happen under normal conditions — it likely indicates a bug in the API response. Open an
+issue with the raw API response if you encounter this.
+
 ---
 
 ## Contributing
@@ -240,4 +272,4 @@ Pull requests are welcome. Please:
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT-0 (MIT No Attribution). See [LICENSE](LICENSE).
