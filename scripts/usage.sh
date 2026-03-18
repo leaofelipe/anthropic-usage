@@ -50,6 +50,7 @@ Options:
   --weekly      Show the past 7 days of usage (default)
   --monthly     Show the past 30 days of usage
   --breakdown   Group results by model
+  --check       Verify the API key is valid (no usage data fetched)
   --help        Show this help message
 
 Examples:
@@ -282,8 +283,8 @@ render_breakdown() {
       ($r.model // "unknown") as $model |
       .[$model].input  += (($r.uncached_input_tokens // 0)
                           + ($r.cache_read_input_tokens // 0)
-                          + ($r.cache_creation.ephemeral_1h_input_tokens // 0)
-                          + ($r.cache_creation.ephemeral_5m_input_tokens // 0)) |
+                          + (($r.cache_creation // {}).ephemeral_1h_input_tokens // 0)
+                          + (($r.cache_creation // {}).ephemeral_5m_input_tokens // 0)) |
       .[$model].output += ($r.output_tokens // 0) |
       .[$model].searches += ($r.server_tool_use.web_search_requests // 0)
     )
@@ -311,6 +312,7 @@ OPT_DAILY=false
 OPT_WEEKLY=false
 OPT_MONTHLY=false
 OPT_BREAKDOWN=false
+OPT_CHECK=false
 
 for arg in "$@"; do
   case "$arg" in
@@ -318,6 +320,7 @@ for arg in "$@"; do
     --weekly)    OPT_WEEKLY=true ;;
     --monthly)   OPT_MONTHLY=true ;;
     --breakdown) OPT_BREAKDOWN=true ;;
+    --check)     OPT_CHECK=true ;;
     --help|-h)   usage; exit 0 ;;
     *)           die "Unknown option: ${arg}. Run with --help to see available options." ;;
   esac
@@ -359,6 +362,24 @@ fi
 
 if [[ "$ANTHROPIC_ADMIN_API_KEY" != sk-ant-admin* ]]; then
   die "Invalid API key format. Anthropic Admin keys start with 'sk-ant-admin'. Check ${KEY_FILE}."
+fi
+
+# If --check was requested, validate the key via GET /v1/models and exit.
+if $OPT_CHECK; then
+  echo "Checking API key..."
+  http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+    --connect-timeout 10 \
+    --max-time 30 \
+    -H "x-api-key: ${ANTHROPIC_ADMIN_API_KEY}" \
+    -H "anthropic-version: ${API_VERSION}" \
+    "https://api.anthropic.com/v1/models")
+  case "$http_code" in
+    200) echo "OK — key is valid and accepted by the Anthropic API." ; exit 0 ;;
+    401) die "401 Unauthorized — key is invalid, expired, or has a typo. Re-generate it in the Anthropic Console." ;;
+    403) die "403 Forbidden — key lacks the required permissions, or your account is not on an Organization plan." ;;
+    000) die "Network error — could not reach api.anthropic.com. Check your internet connection." ;;
+    *)   die "Unexpected HTTP ${http_code} — check the Anthropic API status at https://status.anthropic.com." ;;
+  esac
 fi
 
 # -----------------------------------------------------------------------------

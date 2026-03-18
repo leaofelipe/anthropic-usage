@@ -76,6 +76,9 @@ printf '%s' 'sk-ant-admin-YOUR_KEY_HERE' > ~/.config/anthropic-usage/api_key
 
 # 3. Restrict file permissions so only you can read it
 chmod 600 ~/.config/anthropic-usage/api_key
+
+# 4. Verify the key works
+bash scripts/usage.sh --check
 ```
 
 ### Why this is safer than environment variables or shell profiles
@@ -135,6 +138,7 @@ Available flags:
 | `--weekly` | Show the past 7 days (default if no flag given) |
 | `--monthly` | Show the past 30 days |
 | `--breakdown` | Group results by model |
+| `--check` | Verify the API key is valid (no usage data fetched) |
 | `--help` | Show help text |
 
 Flags can be combined:
@@ -192,23 +196,27 @@ With `--breakdown`:
 
 ## Verification
 
-Before using the skill, you can verify your key works by running a raw `curl` command:
+After setting up your API key, verify it works before running any usage queries:
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}" \
-  -H "x-api-key: $(cat ~/.config/anthropic-usage/api_key)" \
-  -H "anthropic-version: 2023-06-01" \
-  "https://api.anthropic.com/v1/organizations/usage_report/messages?starting_at=$(date -u '+%Y-%m-%dT00:00:00Z')&ending_at=$(date -u '+%Y-%m-%dT23:59:59Z')&bucket_width=1d"
+bash scripts/usage.sh --check
 ```
 
-What the HTTP status code means:
+Expected output on success:
 
-| Code | Meaning | Action |
-|------|---------|--------|
-| `200` | Success — key is valid and has Admin access | You are good to go |
-| `401` | Unauthorized — key is invalid, expired, or has a typo | Re-generate the key in the Anthropic Console and re-write the file |
-| `403` | Forbidden — key lacks Admin permissions, or account is not on Organization plan | Ensure you are using an **Admin key** and that your account is on the Organization plan |
-| `000` | Network error — `curl` could not connect | Check your internet connection |
+```
+Checking API key...
+OK — key is valid and accepted by the Anthropic API.
+```
+
+What each outcome means:
+
+| Output | Meaning | Action |
+|--------|---------|--------|
+| `OK — key is valid...` | Key is accepted by the API | You are good to go |
+| `401 Unauthorized` | Key is invalid, expired, or has a typo | Re-generate the key in the Anthropic Console and re-write the file |
+| `403 Forbidden` | Key lacks required permissions, or account is not on Organization plan | Ensure you are using an **Admin key** and that your account is on the Organization plan |
+| `Network error` | `curl` could not reach `api.anthropic.com` | Check your internet connection |
 
 ---
 
