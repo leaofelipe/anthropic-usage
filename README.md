@@ -1,6 +1,6 @@
 # Anthropic Usage Skill
 
-An [OpenClaw](https://openclaw.dev) AgentSkill that queries the **Anthropic Admin API** to display token usage reports — daily, weekly, monthly, and broken down by model.
+An [OpenClaw](https://openclaw.dev) Agent Skill that queries the **Anthropic Admin API** to display token usage reports — daily, weekly, monthly, and broken down by model.
 
 ---
 
@@ -28,12 +28,13 @@ An [OpenClaw](https://openclaw.dev) AgentSkill that queries the **Anthropic Admi
 
 You need the following tools installed locally:
 
-| Tool | Why | Check |
-|------|-----|-------|
-| `curl` | Makes HTTP requests to the API | `curl --version` |
-| `jq` | Parses and transforms JSON responses | `jq --version` |
+| Tool   | Why                                  | Check            |
+| ------ | ------------------------------------ | ---------------- |
+| `curl` | Makes HTTP requests to the API       | `curl --version` |
+| `jq`   | Parses and transforms JSON responses | `jq --version`   |
 
 Install `jq` if missing:
+
 - **Ubuntu/Debian**: `sudo apt install jq`
 - **macOS**: `brew install jq`
 - **Fedora/RHEL**: `sudo dnf install jq`
@@ -118,14 +119,14 @@ chmod +x scripts/usage.sh
 
 Available flags:
 
-| Flag | Description |
-|------|-------------|
-| `--daily` | Show today's usage |
-| `--weekly` | Show the past 7 days (default if no flag given) |
-| `--monthly` | Show the past 30 days |
-| `--breakdown` | Group results by model |
-| `--check` | Verify the API key is valid (no usage data fetched) |
-| `--help` | Show help text |
+| Flag          | Description                                         |
+| ------------- | --------------------------------------------------- |
+| `--daily`     | Show today's usage                                  |
+| `--weekly`    | Show the past 7 days (default if no flag given)     |
+| `--monthly`   | Show the past 30 days                               |
+| `--breakdown` | Group results by model                              |
+| `--check`     | Verify the API key is valid (no usage data fetched) |
+| `--help`      | Show help text                                      |
 
 Flags can be combined:
 
@@ -204,12 +205,12 @@ OK — key is valid (verified via /v1/models). Note: usage endpoint permissions 
 
 What each outcome means:
 
-| Output | Meaning | Action |
-|--------|---------|--------|
-| `OK — key is valid...` | Key is accepted by the API | You are good to go |
-| `401 Unauthorized` | Key is invalid, expired, or has a typo | Re-generate the key in the Anthropic Console and update `~/.openclaw/openclaw.json` |
-| `403 Forbidden` | Key lacks required permissions, or account is not on Organization plan | Ensure you are using an **Admin key** and that your account is on the Organization plan |
-| `Network error` | `curl` could not reach `api.anthropic.com` | Check your internet connection |
+| Output                 | Meaning                                                                | Action                                                                                  |
+| ---------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `OK — key is valid...` | Key is accepted by the API                                             | You are good to go                                                                      |
+| `401 Unauthorized`     | Key is invalid, expired, or has a typo                                 | Re-generate the key in the Anthropic Console and update `~/.openclaw/openclaw.json`     |
+| `403 Forbidden`        | Key lacks required permissions, or account is not on Organization plan | Ensure you are using an **Admin key** and that your account is on the Organization plan |
+| `Network error`        | `curl` could not reach `api.anthropic.com`                             | Check your internet connection                                                          |
 
 ---
 
@@ -220,12 +221,12 @@ results, they are fetched sequentially and merged into a single dataset before r
 
 The following safeguards prevent the script from hanging or looping indefinitely:
 
-| Scenario | Protection | Max wait |
-|---|---|---|
-| DNS does not resolve / API unreachable | `--connect-timeout 10` on every `curl` call | 10 s |
-| Connection open but API stops sending data | `--max-time 30` on every `curl` call | 30 s |
-| API returns `has_more: true` indefinitely | Hard limit of 100 pages per request | 100 × 30 s (theoretical) |
-| API returns `has_more: true` but empty `next_page` | Explicit `-z "$next_page"` check exits the loop immediately | Immediate |
+| Scenario                                           | Protection                                                  | Max wait                 |
+| -------------------------------------------------- | ----------------------------------------------------------- | ------------------------ |
+| DNS does not resolve / API unreachable             | `--connect-timeout 10` on every `curl` call                 | 10 s                     |
+| Connection open but API stops sending data         | `--max-time 30` on every `curl` call                        | 30 s                     |
+| API returns `has_more: true` indefinitely          | Hard limit of 100 pages per request                         | 100 × 30 s (theoretical) |
+| API returns `has_more: true` but empty `next_page` | Explicit `-z "$next_page"` check exits the loop immediately | Immediate                |
 
 In practice, a 30-day window with `bucket_width=1d` fits in a single page (the API
 returns at most 31 buckets per page). Reaching the 100-page limit would require a
@@ -243,6 +244,7 @@ Your key is invalid or expired. Generate a new one from the Anthropic Console an
 
 **"403 Forbidden"**
 One of two things:
+
 1. You are using a regular API key instead of an **Admin key**.
 2. Your Anthropic account is not on an Organization plan.
 
