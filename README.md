@@ -1,4 +1,4 @@
-# anthropic-usage
+# Anthropic Usage Skill
 
 An [OpenClaw](https://openclaw.dev) AgentSkill that queries the **Anthropic Admin API** to display token usage reports — daily, weekly, monthly, and broken down by model.
 
