@@ -199,7 +199,7 @@ Expected output on success:
 
 ```
 Checking API key...
-OK — key is valid and accepted by the Anthropic API.
+OK — key is valid (verified via /v1/models). Note: usage endpoint permissions are only confirmed when fetching data.
 ```
 
 What each outcome means:

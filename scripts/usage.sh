@@ -113,25 +113,31 @@ format_number() {
 # API CALL
 # -----------------------------------------------------------------------------
 
+# Temp file used by _curl_usage; created once and cleaned up on exit.
+_BODY_TMP=$(mktemp)
+trap 'rm -f "${_BODY_TMP}"' EXIT
+
 # Make a single HTTP request to the Anthropic usage API.
 # Prints the response body to stdout on success, or exits with an error on failure.
 # Arguments:
 #   $1 — full URL (including query string)
 _curl_usage() {
   local url="$1"
-  local response http_code body
+  local http_code
 
   # --connect-timeout: abort if TCP handshake takes longer than 10 s.
   # --max-time: abort the entire request (including response body) after 30 s.
-  response=$(curl -s -w "\n%{http_code}" \
-    --connect-timeout 10 \
-    --max-time 30 \
-    -H "x-api-key: ${ANTHROPIC_ADMIN_API_KEY}" \
-    -H "anthropic-version: ${API_VERSION}" \
-    "${url}") || die "Network error: curl failed (timed out or connection refused). Check your internet connection."
-
-  http_code="${response##*$'\n'}"
-  body="${response%$'\n'*}"
+  # Writing the body to a temp file avoids the fragile "strip last newline" pattern
+  # that would otherwise corrupt JSON bodies ending with a newline character.
+  # The set +x guard prevents the API key from leaking into shell trace output.
+  { set +x
+    http_code=$(curl -s -o "${_BODY_TMP}" -w "%{http_code}" \
+      --connect-timeout 10 \
+      --max-time 30 \
+      -H "x-api-key: ${ANTHROPIC_ADMIN_API_KEY}" \
+      -H "anthropic-version: ${API_VERSION}" \
+      "${url}")
+  } 2>/dev/null || die "Network error: curl failed (timed out or connection refused). Check your internet connection."
 
   case "$http_code" in
     200) ;;
@@ -140,10 +146,10 @@ _curl_usage() {
     404) die "404 Not Found — the usage report endpoint was not found. The API URL may have changed; please check for an updated version of this script." ;;
     429) die "429 Too Many Requests — you are being rate-limited. Wait a moment and try again." ;;
     5*)  die "Server error (HTTP ${http_code}) — the Anthropic API returned an unexpected error. Try again in a few minutes." ;;
-    *)   die "Unexpected HTTP status ${http_code}. Response: ${body}" ;;
+    *)   die "Unexpected HTTP status ${http_code}. Response: $(cat "${_BODY_TMP}")" ;;
   esac
 
-  echo "$body"
+  cat "${_BODY_TMP}"
 }
 
 # Call the Anthropic usage API, following pagination until all buckets are
@@ -367,12 +373,14 @@ fi
 # Permissions for /v1/organizations/usage_report/messages are only verified when fetching data.
 if $OPT_CHECK; then
   echo "Checking API key..."
-  http_code=$(curl -s -o /dev/null -w "%{http_code}" \
-    --connect-timeout 10 \
-    --max-time 30 \
-    -H "x-api-key: ${ANTHROPIC_ADMIN_API_KEY}" \
-    -H "anthropic-version: ${API_VERSION}" \
-    "https://api.anthropic.com/v1/models")
+  { set +x
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+      --connect-timeout 10 \
+      --max-time 30 \
+      -H "x-api-key: ${ANTHROPIC_ADMIN_API_KEY}" \
+      -H "anthropic-version: ${API_VERSION}" \
+      "https://api.anthropic.com/v1/models")
+  } 2>/dev/null
   case "$http_code" in
     200) echo "OK — key is valid (verified via /v1/models). Note: usage endpoint permissions are only confirmed when fetching data." ; exit 0 ;;
     401) die "401 Unauthorized — key is invalid, expired, or has a typo. Re-generate it in the Anthropic Console." ;;
