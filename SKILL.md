@@ -93,7 +93,8 @@ After the script runs:
 1. Present the data as a **friendly chat message**, not a raw dump.
 2. Summarize the key numbers at the top (total input tokens, total output tokens, total cost if available).
 3. If `--breakdown` was used, render the per-model table in a readable way.
-4. If the script exits with an error (non-zero exit code), show the error message and suggest fixes:
+4. **Estimate the cost:** After presenting the token data, fetch the current Anthropic pricing page at `https://www.anthropic.com/pricing` using a web fetch tool. Extract the prices for each model that appeared in the results (input, cache write, cache read, and output token rates). Then calculate the estimated cost for each model and the total. Present this as a cost summary after the token table. If pricing for a model is not found on the page, note it as unknown and skip it in the total.
+5. If the script exits with an error (non-zero exit code), show the error message and suggest fixes:
    - Exit 1 / "key file not found" → re-show setup guidance
    - "401 Unauthorized" → key is invalid or expired
    - "403 Forbidden" → key lacks Admin permissions or account is not on an Organization plan
@@ -109,11 +110,19 @@ Here's your Anthropic usage for the past 7 days:
 🔢 Total tokens:   14,280,000
 
 Model breakdown:
-| Model                    | Input tokens | Output tokens |
-|--------------------------|-------------|---------------|
-| claude-opus-4-6          |   8,200,000 |   1,100,000   |
-| claude-sonnet-4-6        |   3,900,000 |     680,000   |
-| claude-haiku-4-5-20251001|     350,000 |      50,000   |
+| Model                     | Input tokens | Output tokens |
+|---------------------------|-------------|---------------|
+| claude-opus-4-6           |   8,200,000 |   1,100,000   |
+| claude-sonnet-4-6         |   3,900,000 |     680,000   |
+| claude-haiku-4-5-20251001 |     350,000 |      50,000   |
+
+💰 Estimated cost (prices fetched live from anthropic.com/pricing):
+| Model                     | Estimated cost |
+|---------------------------|----------------|
+| claude-opus-4-6           |        $152.40 |
+| claude-sonnet-4-6         |         $18.72 |
+| claude-haiku-4-5-20251001 |          $0.53 |
+| **Total**                 |    **$171.65** |
 ```
 
 Keep the tone helpful and concise.

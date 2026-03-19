@@ -109,7 +109,10 @@ Show me my Anthropic token usage for today
 How much have I used this week?
 Give me a monthly breakdown by model
 What models am I using the most this month?
+How much did I spend this week?
 ```
+
+> **Cost estimation:** When you ask about costs, the agent automatically fetches the current Anthropic pricing page to ensure the rates used in the calculation are always up to date.
 
 ### Directly in the terminal
 
