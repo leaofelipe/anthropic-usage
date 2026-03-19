@@ -54,9 +54,9 @@ Run the command from the skill's root directory (where `scripts/` lives), or use
 After the script runs:
 
 1. Present the data as a **friendly chat message**, not a raw dump.
-2. Summarize the key numbers at the top (total input tokens, total output tokens, total cost if available).
+2. Summarize the key numbers at the top (total input tokens, total output tokens).
 3. If `--breakdown` was used, render the per-model table in a readable way.
-4. **Estimate the cost:** After presenting the token data, fetch the current Anthropic pricing page at `https://www.anthropic.com/pricing` using a web fetch tool. Extract the prices for each model that appeared in the results (input, cache write, cache read, and output token rates). Then calculate the estimated cost for each model and the total. Present this as a cost summary after the token table. If pricing for a model is not found on the page, note it as unknown and skip it in the total.
+4. **Estimate the cost (agent-side step):** The script returns token counts only — pricing is not included. After presenting the token data, use your `web_fetch` tool to fetch `https://www.anthropic.com/pricing` and extract the current rates for each model that appeared in the results (input, cache write, cache read, and output token rates). Calculate the estimated cost per model and the total. Present this as a cost summary after the token table. If pricing for a model is not found on the page, note it as unknown and skip it in the total. This fetch is intentional and scoped to `anthropic.com`.
 5. If the script exits with an error (non-zero exit code), show the error message and suggest fixes:
    - Exit 1 / "key file not found" → re-show setup guidance
    - "401 Unauthorized" → key is invalid or expired
