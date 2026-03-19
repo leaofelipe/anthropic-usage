@@ -1,5 +1,7 @@
 # Anthropic Usage Skill
 
+[![version](https://img.shields.io/badge/version-1.0.5-blue)](https://clawhub.ai/leaofelipe/anthropic-usage)
+
 An [OpenClaw](https://openclaw.dev) Agent Skill that queries the **Anthropic Admin API** to display token usage reports — daily, weekly, monthly, and broken down by model.
 
 ---
@@ -61,34 +63,19 @@ chmod +x scripts/usage.sh
 
 ## Setting up your API key
 
-This skill requires an Anthropic **Admin API key**. You can generate one in the Anthropic Console under **Settings → API Keys → Admin keys**. Your account must be on an **Organization plan** — personal accounts get a `403 Forbidden`.
+This skill requires an Anthropic **Admin API key**. Your account must be on an **Organization plan** — personal accounts get a `403 Forbidden`.
 
-### Option 1 — Edit `openclaw.json` directly (recommended)
+### Via the OpenClaw UI (recommended)
 
-Open `~/.openclaw/openclaw.json` and add your key under the skill entry:
+1. Open the OpenClaw UI and go to the **Skills** section
+2. Find **anthropic-usage** and click on it
+3. Enter your Admin API key in the **API key** field and click **Save key**
 
-```json
-{
-  "skills": {
-    "entries": {
-      "anthropic-usage": {
-        "enabled": true,
-        "apiKey": "sk-ant-admin-..."
-      }
-    }
-  }
-}
-```
-
-The gateway picks up the change automatically — no restart needed. Then just ask again.
+That's it — no config file editing needed.
 
 > **Your key is stored in `~/.openclaw/openclaw.json` and never leaves your machine.**
 
-### Option 2 — Ask the agent to set it for you (fallback)
-
-If you prefer, paste your key directly in the chat. The agent will save it to `openclaw.json` automatically using the `gateway` tool. This is a bit less secure than editing the file yourself (the key appears in your chat history), but it's fine for private DMs.
-
-> **Safe merge:** The agent uses `gateway config.patch`, which performs a **JSON merge patch** — it only updates the `anthropic-usage` entry and leaves all other settings untouched. The agent also reads the current config hash first (`gateway config.get`) and passes it as `baseHash` to prevent config conflicts.
+You can generate an Admin API key in the Anthropic Console under **Settings → API Keys → Admin keys**.
 
 Once the key is saved, verify it works:
 
@@ -109,7 +96,10 @@ Show me my Anthropic token usage for today
 How much have I used this week?
 Give me a monthly breakdown by model
 What models am I using the most this month?
+How much did I spend this week?
 ```
+
+> **Cost estimation:** When you ask about costs, the agent automatically fetches the current Anthropic pricing page to ensure the rates used in the calculation are always up to date.
 
 ### Directly in the terminal
 
@@ -239,7 +229,7 @@ severely malformed API response.
 ## Troubleshooting
 
 **"ANTHROPIC_ADMIN_API_KEY is not set"**
-The key is missing. Add it to `~/.openclaw/openclaw.json` under `skills.entries.anthropic-usage.apiKey`, or ask the agent to set it for you by pasting the key in chat. See the [Setting up your API key](#setting-up-your-api-key) section above.
+The key is missing. Open the OpenClaw UI, go to **Skills → anthropic-usage**, and enter your Admin API key in the **API key** field. See the [Setting up your API key](#setting-up-your-api-key) section above.
 
 **"401 Unauthorized"**
 Your key is invalid or expired. Generate a new one from the Anthropic Console and update it in `~/.openclaw/openclaw.json`.
