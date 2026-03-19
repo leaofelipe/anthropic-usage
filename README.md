@@ -1,5 +1,7 @@
 # Anthropic Usage Skill
 
+[![version](https://img.shields.io/badge/version-1.0.3-blue)](https://clawhub.ai/leaofelipe/anthropic-usage)
+
 An [OpenClaw](https://openclaw.dev) Agent Skill that queries the **Anthropic Admin API** to display token usage reports — daily, weekly, monthly, and broken down by model.
 
 ---

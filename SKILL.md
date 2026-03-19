@@ -5,6 +5,9 @@ metadata:
   openclaw:
     emoji: 📊
     requires:
+      bins:
+        - curl
+        - jq
       env:
         - ANTHROPIC_ADMIN_API_KEY
 ---
