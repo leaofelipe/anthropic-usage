@@ -58,29 +58,36 @@ chmod +x scripts/usage.sh
 
 ---
 
-## Configuration
+## Setting up your API key
 
-### API key setup
+This skill requires an Anthropic **Admin API key**. You can generate one in the Anthropic Console under **Settings → API Keys → Admin keys**. Your account must be on an **Organization plan** — personal accounts get a `403 Forbidden`.
 
-This skill requires an `ANTHROPIC_ADMIN_API_KEY` environment variable containing an Admin API key.
+### Option 1 — Edit `openclaw.json` directly (recommended)
 
-You can generate one in the Anthropic Console under **Settings → API Keys → Admin keys**. Your account must be on an **Organization plan** — personal accounts get a `403 Forbidden`.
+Open `~/.openclaw/openclaw.json` and add your key under the skill entry:
 
-**Via OpenClaw (recommended):**
-
+```json
+{
+  "skills": {
+    "entries": {
+      "anthropic-usage": {
+        "enabled": true,
+        "apiKey": "sk-ant-admin-..."
+      }
+    }
+  }
+}
 ```
-/secrets set ANTHROPIC_ADMIN_API_KEY sk-ant-admin-YOUR_KEY_HERE
-```
 
-OpenClaw's secrets manager stores the key securely and injects it as an environment variable when the skill runs. You only need to do this once.
+The gateway picks up the change automatically — no restart needed. Then just ask again.
 
-**For terminal use:**
+> **Your key is stored in `~/.openclaw/openclaw.json` and never leaves your machine.**
 
-```bash
-export ANTHROPIC_ADMIN_API_KEY=sk-ant-admin-YOUR_KEY_HERE
-```
+### Option 2 — Ask the agent to set it for you (fallback)
 
-Then verify the key works:
+If you prefer, paste your key directly in the chat. The agent will save it to `openclaw.json` automatically using the `gateway` tool. This is a bit less secure than editing the file yourself (the key appears in your chat history), but it's fine for private DMs.
+
+Once the key is saved, verify it works:
 
 ```bash
 bash scripts/usage.sh --check
@@ -200,7 +207,7 @@ What each outcome means:
 | Output | Meaning | Action |
 |--------|---------|--------|
 | `OK — key is valid...` | Key is accepted by the API | You are good to go |
-| `401 Unauthorized` | Key is invalid, expired, or has a typo | Re-generate the key in the Anthropic Console and run `/secrets set` again |
+| `401 Unauthorized` | Key is invalid, expired, or has a typo | Re-generate the key in the Anthropic Console and update `~/.openclaw/openclaw.json` |
 | `403 Forbidden` | Key lacks required permissions, or account is not on Organization plan | Ensure you are using an **Admin key** and that your account is on the Organization plan |
 | `Network error` | `curl` could not reach `api.anthropic.com` | Check your internet connection |
 
@@ -229,10 +236,10 @@ severely malformed API response.
 ## Troubleshooting
 
 **"ANTHROPIC_ADMIN_API_KEY is not set"**
-The environment variable is missing. In OpenClaw run `/secrets set ANTHROPIC_ADMIN_API_KEY sk-ant-admin-YOUR_KEY_HERE`. For terminal use, `export ANTHROPIC_ADMIN_API_KEY=sk-ant-admin-YOUR_KEY_HERE`.
+The key is missing. Add it to `~/.openclaw/openclaw.json` under `skills.entries.anthropic-usage.apiKey`, or ask the agent to set it for you by pasting the key in chat. See the [Setting up your API key](#setting-up-your-api-key) section above.
 
 **"401 Unauthorized"**
-Your key is invalid or expired. Generate a new one from the Anthropic Console and re-register it with `/secrets set`.
+Your key is invalid or expired. Generate a new one from the Anthropic Console and update it in `~/.openclaw/openclaw.json`.
 
 **"403 Forbidden"**
 One of two things:

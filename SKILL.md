@@ -26,16 +26,49 @@ Check whether the API key is available:
 
 ### Setup guidance (show this when KEY_MISSING)
 
-Tell the user:
+Tell the user the key is missing and explain they have two options:
 
-> The `ANTHROPIC_ADMIN_API_KEY` environment variable is not set. Register it with OpenClaw:
->
-> ```
-> /secrets set ANTHROPIC_ADMIN_API_KEY sk-ant-admin-YOUR_KEY_HERE
-> ```
->
-> You can get an Admin API key from the Anthropic Console under **Settings → API Keys → Admin keys**.
-> Your account must be on an **Organization plan** to access usage reports.
+**Option 1 (recommended) — Edit `~/.openclaw/openclaw.json` directly:**
+
+Add the following to the config file:
+
+```json
+{
+  "skills": {
+    "entries": {
+      "anthropic-usage": {
+        "enabled": true,
+        "apiKey": "sk-ant-admin-..."
+      }
+    }
+  }
+}
+```
+
+The gateway reloads automatically after saving. Then just ask again.
+
+**Option 2 (fallback) — Paste the key in chat:**
+
+The user can share the key directly in chat and you will save it automatically using the `gateway` tool with action `config.patch`:
+
+```json
+{
+  "skills": {
+    "entries": {
+      "anthropic-usage": {
+        "apiKey": "<the key the user provided>"
+      }
+    }
+  }
+}
+```
+
+After patching, confirm the key was saved and note it will take effect on the next session (or ask the user to restart the gateway if they want it immediately).
+
+Warn the user that sharing keys via chat is less secure, but acceptable for private DMs.
+
+You can get an Admin API key from the Anthropic Console under **Settings → API Keys → Admin keys**.
+Your account must be on an **Organization plan** to access usage reports.
 
 ## Running the usage script
 

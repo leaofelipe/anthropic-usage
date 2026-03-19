@@ -346,11 +346,13 @@ require_cmd jq
 if [[ -z "${ANTHROPIC_ADMIN_API_KEY:-}" ]]; then
   die "ANTHROPIC_ADMIN_API_KEY is not set.
 
-  Set it via OpenClaw:
-    /secrets set ANTHROPIC_ADMIN_API_KEY sk-ant-admin-YOUR_KEY_HERE
+  To set it, choose one of:
 
-  Or export it manually for terminal use:
-    export ANTHROPIC_ADMIN_API_KEY=sk-ant-admin-YOUR_KEY_HERE
+  Option 1 (recommended): Add it to ~/.openclaw/openclaw.json under
+    skills.entries.anthropic-usage.apiKey
+
+  Option 2 (via chat): Ask the agent to set it for you — just paste
+    your key in the chat and the agent will save it automatically.
 
   You can generate an Admin key in the Anthropic Console under Settings → API Keys → Admin keys.
   Your account must be on an Organization plan to access usage reports."
