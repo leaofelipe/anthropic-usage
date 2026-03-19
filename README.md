@@ -88,6 +88,8 @@ The gateway picks up the change automatically — no restart needed. Then just a
 
 If you prefer, paste your key directly in the chat. The agent will save it to `openclaw.json` automatically using the `gateway` tool. This is a bit less secure than editing the file yourself (the key appears in your chat history), but it's fine for private DMs.
 
+> **Safe merge:** The agent uses `gateway config.patch`, which performs a **JSON merge patch** — it only updates the `anthropic-usage` entry and leaves all other settings untouched. The agent also reads the current config hash first (`gateway config.get`) and passes it as `baseHash` to prevent config conflicts.
+
 Once the key is saved, verify it works:
 
 ```bash

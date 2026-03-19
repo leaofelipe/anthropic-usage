@@ -1,6 +1,6 @@
 ---
 name: anthropic-usage
-description: "Query Anthropic Admin API for token usage reports (daily, weekly, monthly) with model breakdown. Requires an Anthropic Organization account."
+description: "Query Anthropic Admin API for token usage reports (daily, weekly, monthly) with model breakdown. Requires an Anthropic Organization account. Key setup via chat uses gateway config.patch (JSON merge patch — safe partial update, only modifies the anthropic-usage entry)."
 metadata:
   openclaw:
     emoji: 📊
@@ -49,19 +49,20 @@ The gateway reloads automatically after saving. Then just ask again.
 
 **Option 2 (fallback) — Paste the key in chat:**
 
-The user can share the key directly in chat and you will save it automatically using the `gateway` tool with action `config.patch`:
+The user can share the key directly in chat and you will save it automatically using the `gateway` tool with action `config.patch`.
 
-```json
-{
-  "skills": {
-    "entries": {
-      "anthropic-usage": {
-        "apiKey": "<the key the user provided>"
-      }
-    }
-  }
-}
+`config.patch` uses **JSON merge patch semantics** (RFC 7396): objects are merged recursively, so applying `{ "skills": { "entries": { "anthropic-usage": { "apiKey": "..." } } } }` will ONLY update that specific skill entry and will NOT overwrite or delete any other skills or config entries.
+
+You must follow this two-step flow:
+
 ```
+Step 1: gateway config.get → capture payload.hash
+Step 2: gateway config.patch with:
+  raw: { "skills": { "entries": { "anthropic-usage": { "apiKey": "<key the user provided>" } } } }
+  baseHash: <hash from step 1>
+```
+
+The `baseHash` is required to prevent config conflicts — the gateway will reject the patch if the config has changed since you read it.
 
 After patching, confirm the key was saved and note it will take effect on the next session (or ask the user to restart the gateway if they want it immediately).
 
