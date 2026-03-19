@@ -30,7 +30,28 @@ Check whether the API key is available:
 
 ### Setup guidance (show this when KEY_MISSING)
 
-Tell the user to open the OpenClaw UI, go to the **Skills** section, find **anthropic-usage**, and enter their Admin API key in the **API key** field. Then click **Save key**.
+Tell the user they have two options:
+
+**Option 1 (recommended) — OpenClaw UI:**
+Open the OpenClaw UI, go to **Skills → anthropic-usage**, enter the Admin API key in the **API key** field, and click **Save key**.
+
+**Option 2 — Edit `~/.openclaw/openclaw.json` directly (for CLI users):**
+Add the key under the skill entry:
+
+```json
+{
+  "skills": {
+    "entries": {
+      "anthropic-usage": {
+        "enabled": true,
+        "apiKey": "sk-ant-admin-..."
+      }
+    }
+  }
+}
+```
+
+The gateway picks up the change automatically — no restart needed.
 
 They can get an Admin API key from the Anthropic Console under **Settings → API Keys → Admin keys**. Their account must be on an **Organization plan** to access usage reports.
 

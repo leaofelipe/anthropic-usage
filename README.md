@@ -1,6 +1,6 @@
 # Anthropic Usage Skill
 
-[![version](https://img.shields.io/badge/version-1.0.5-blue)](https://clawhub.ai/leaofelipe/anthropic-usage)
+[![version](https://img.shields.io/badge/version-1.0.7-blue)](https://clawhub.ai/leaofelipe/anthropic-usage)
 
 An [OpenClaw](https://openclaw.dev) Agent Skill that queries the **Anthropic Admin API** to display token usage reports — daily, weekly, monthly, and broken down by model.
 
@@ -65,7 +65,9 @@ chmod +x scripts/usage.sh
 
 This skill requires an Anthropic **Admin API key**. Your account must be on an **Organization plan** — personal accounts get a `403 Forbidden`.
 
-### Via the OpenClaw UI (recommended)
+You can generate an Admin API key in the Anthropic Console under **Settings → API Keys → Admin keys**.
+
+### Option 1 — OpenClaw UI (recommended)
 
 1. Open the OpenClaw UI and go to the **Skills** section
 2. Find **anthropic-usage** and click on it
@@ -73,9 +75,26 @@ This skill requires an Anthropic **Admin API key**. Your account must be on an *
 
 That's it — no config file editing needed.
 
-> **Your key is stored in `~/.openclaw/openclaw.json` and never leaves your machine.**
+### Option 2 — Edit `openclaw.json` directly (for CLI users)
 
-You can generate an Admin API key in the Anthropic Console under **Settings → API Keys → Admin keys**.
+Open `~/.openclaw/openclaw.json` and add your key under the skill entry:
+
+```json
+{
+  "skills": {
+    "entries": {
+      "anthropic-usage": {
+        "enabled": true,
+        "apiKey": "sk-ant-admin-..."
+      }
+    }
+  }
+}
+```
+
+The gateway picks up the change automatically — no restart needed.
+
+> **Your key is stored in `~/.openclaw/openclaw.json` and never leaves your machine.**
 
 Once the key is saved, verify it works:
 
@@ -229,7 +248,7 @@ severely malformed API response.
 ## Troubleshooting
 
 **"ANTHROPIC_ADMIN_API_KEY is not set"**
-The key is missing. Open the OpenClaw UI, go to **Skills → anthropic-usage**, and enter your Admin API key in the **API key** field. See the [Setting up your API key](#setting-up-your-api-key) section above.
+The key is missing. Set it via the OpenClaw UI (**Skills → anthropic-usage → API key**) or by editing `~/.openclaw/openclaw.json` directly. See the [Setting up your API key](#setting-up-your-api-key) section above.
 
 **"401 Unauthorized"**
 Your key is invalid or expired. Generate a new one from the Anthropic Console and update it in `~/.openclaw/openclaw.json`.
