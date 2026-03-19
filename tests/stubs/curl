@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Stub for curl. Simulates the Anthropic API without making real network calls.
+# Reads STUB_CURL_FIXTURE to determine which fixture to return.
+# Reads STUB_CURL_HTTP_CODE to override the HTTP status code (default: 200).
+# Reads STUB_CURL_PAGES to simulate paginated responses (comma-separated fixture names).
+
+FIXTURE="${STUB_CURL_FIXTURE:-response_ok}"
+HTTP_CODE="${STUB_CURL_HTTP_CODE:-200}"
+FIXTURES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../fixtures" && pwd)"
+
+# Parse curl flags to find -o (output file) and -w (write-out format).
+# We replicate curl's interface: write body to -o file, print -w value to stdout.
+output_file=""
+write_out=""
+args=("$@")
+i=0
+while (( i < ${#args[@]} )); do
+  case "${args[$i]}" in
+    -o)  i=$(( i + 1 )); output_file="${args[$i]}" ;;
+    -w)  i=$(( i + 1 )); write_out="${args[$i]}" ;;
+    -o*) output_file="${args[$i]:2}" ;;
+    -w*) write_out="${args[$i]:2}" ;;
+  esac
+  i=$(( i + 1 ))
+done
+
+# Handle paginated multi-page stubs.
+# STUB_CURL_PAGES=fixture1,fixture2 returns fixture1 on first call, fixture2 on second, etc.
+if [[ -n "${STUB_CURL_PAGES:-}" ]]; then
+  PAGE_FILE="${TMPDIR:-/tmp}/.stub_curl_page_counter"
+  page_num=0
+  [[ -f "$PAGE_FILE" ]] && page_num=$(cat "$PAGE_FILE")
+  IFS=',' read -ra pages <<< "$STUB_CURL_PAGES"
+  FIXTURE="${pages[$page_num]:-${pages[-1]}}"
+  echo $(( page_num + 1 )) > "$PAGE_FILE"
+fi
+
+fixture_path="${FIXTURES_DIR}/${FIXTURE}.json"
+if [[ ! -f "$fixture_path" ]]; then
+  echo "STUB ERROR: fixture not found: ${fixture_path}" >&2
+  exit 1
+fi
+
+# Write body to -o file (or stdout if not specified).
+if [[ -n "$output_file" ]]; then
+  cp "$fixture_path" "$output_file"
+else
+  cat "$fixture_path"
+fi
+
+# Print -w value to stdout (curl prints %{http_code} as the status).
+if [[ -n "$write_out" ]]; then
+  echo "${write_out/\%\{http_code\}/$HTTP_CODE}"
+fi
+
+exit 0

@@ -260,6 +260,18 @@ issue with the raw API response if you encounter this.
 
 ---
 
+## Testing
+
+Run the test suite with no credentials or network access required:
+
+```bash
+bash tests/run_tests.sh
+```
+
+Tests use a curl stub that intercepts all HTTP calls and returns fixture responses from `tests/fixtures/`. The suite covers argument parsing, token aggregation, HTTP error handling, pagination, and key security.
+
+---
+
 ## Contributing
 
 Pull requests are welcome. Please:
