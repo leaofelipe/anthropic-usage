@@ -137,7 +137,14 @@ bash scripts/usage.sh --weekly --breakdown
 
 # Past 30 days, broken down by model
 bash scripts/usage.sh --monthly --breakdown
+
+# Multiple periods at once — each section is printed in sequence
+bash scripts/usage.sh --daily --weekly --monthly
 ```
+
+> **Tip:** Period flags (`--daily`, `--weekly`, `--monthly`) can be combined freely.
+> Each requested period is fetched and rendered as a separate section in the output.
+> `--breakdown` applies to all requested periods simultaneously.
 
 ### Example output
 

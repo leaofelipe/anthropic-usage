@@ -114,8 +114,7 @@ format_number() {
 # -----------------------------------------------------------------------------
 
 # Make a single HTTP request to the Anthropic usage API.
-# Prints the parsed response body to stdout and returns the HTTP status code
-# via the global variable _HTTP_CODE.
+# Prints the response body to stdout on success, or exits with an error on failure.
 # Arguments:
 #   $1 — full URL (including query string)
 _curl_usage() {
@@ -131,8 +130,8 @@ _curl_usage() {
     -H "anthropic-version: ${API_VERSION}" \
     "${url}") || die "Network error: curl failed (timed out or connection refused). Check your internet connection."
 
-  http_code=$(echo "$response" | tail -n1)
-  body=$(echo "$response" | sed '$d')
+  http_code="${response##*$'\n'}"
+  body="${response%$'\n'*}"
 
   case "$http_code" in
     200) ;;
@@ -250,7 +249,8 @@ render_summary() {
       ] | @tsv
     ')
 
-  local total_input=$(( total_uncached + total_cache_read + total_cache_creation ))
+  local total_input
+  total_input=$(( total_uncached + total_cache_read + total_cache_creation ))
 
   echo ""
   echo "## ${label}"
@@ -361,6 +361,8 @@ if [[ "$ANTHROPIC_ADMIN_API_KEY" != sk-ant-admin* ]]; then
 fi
 
 # If --check was requested, validate the key via GET /v1/models and exit.
+# Note: /v1/models only confirms the key is syntactically valid and accepted by the API.
+# Permissions for /v1/organizations/usage_report/messages are only verified when fetching data.
 if $OPT_CHECK; then
   echo "Checking API key..."
   http_code=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -370,7 +372,7 @@ if $OPT_CHECK; then
     -H "anthropic-version: ${API_VERSION}" \
     "https://api.anthropic.com/v1/models")
   case "$http_code" in
-    200) echo "OK — key is valid and accepted by the Anthropic API." ; exit 0 ;;
+    200) echo "OK — key is valid (verified via /v1/models). Note: usage endpoint permissions are only confirmed when fetching data." ; exit 0 ;;
     401) die "401 Unauthorized — key is invalid, expired, or has a typo. Re-generate it in the Anthropic Console." ;;
     403) die "403 Forbidden — key lacks the required permissions, or your account is not on an Organization plan." ;;
     000) die "Network error — could not reach api.anthropic.com. Check your internet connection." ;;
